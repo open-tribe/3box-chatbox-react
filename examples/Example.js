@@ -70,6 +70,14 @@ class Example extends React.Component {
               // mute
               openOnMount
               popupChat
+
+              // persistent threads
+              // persistent
+              // open
+              // firstModerator={"0xF439..."}
+              // moderators={["0xp83F..."]}
+              // members={["0xp83F...", "0xu9i7..."]}
+
             // colorTheme="#1168df"
             // threadOpts={{}}
             // spaceOpts={{}}
