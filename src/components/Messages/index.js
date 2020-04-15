@@ -35,7 +35,9 @@ class Message extends Component {
       (isMyComment ? 'sent' : 'received')
     ];
 
-    console.log("Message render(): profile", profile);
+    if (!profile) {
+      return <div></div>
+    }
 
     const profilePicture = (profile && profile.ethAddr) &&
       ((profile.image && profile.image[0] && profile.image[0].contentUrl && profile.image[0].contentUrl['/'])
