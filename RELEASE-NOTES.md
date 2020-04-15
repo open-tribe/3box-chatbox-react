@@ -1,11 +1,18 @@
 # Release Notes
 
-## v0.1.5 - 2020-02-06
+## v0.1.9 - 2020-04-13
+* fix: better check for valid profile picture
+
+## v0.1.8 - 2020-04-13
+* fix: better check for valid profile picture
+
+## v0.1.7 - 2020-04-03
+* chore: update 3box lib to 1.17.1
+
+## v0.1.6 - 2020-02-14
+* fix: update Typescript type interface for new prop `openOnMount`
 * fix: members list working with new library
 * chore: update 3box lib to 1.16.3
-
-## v0.1.6 - 2020-02-06
-* fix: update Typescript type interface for new prop `openOnMount`
 
 ## v0.1.4 - 2020-02-05
 * fix: only openOnMount when not on mobile

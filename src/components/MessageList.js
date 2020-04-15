@@ -64,7 +64,7 @@ class MessageList extends Component {
                 (profile.image ? `https://ipfs.infura.io/ipfs/${profile.image[0].contentUrl['/']}`
                   : makeBlockie(profile.ethAddr));
 
-              if(!profile) return <div>nada</div>;
+              if (!profile) return <div key={memberDID}>{memberDID}</div>;
 
               return (
                 <a
@@ -140,7 +140,7 @@ MessageList.propTypes = {
   membersOnline: PropTypes.array,
   profiles: PropTypes.object,
   currentUserAddr: PropTypes.string,
-  colorTheme: PropTypes.string,
+  colorTheme: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
   userProfileURL: PropTypes.func,
   handleShowOnlineList: PropTypes.func.isRequired,
   isShowOnlineList: PropTypes.bool,
