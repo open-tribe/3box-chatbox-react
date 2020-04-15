@@ -86,8 +86,8 @@ class ChatBox extends Component {
     if (!ethereum) console.error('Chatbox component must have ethereum provider to fully operate');
 
     const options = !!this.props.persistent ? {
-        firstModerator: ethereum.selectedAddress,
-        members: !!this.props.membersOnly
+        firstModerator: this.props.moderator || ethereum.selectedAddress,
+        members: !this.props.open
       } : {
         ghost: true
       };
@@ -95,12 +95,10 @@ class ChatBox extends Component {
     const thread = await box.openThread(spaceName, threadName, options);
     const dialogue = await thread.getPosts();
 
-    console.log("options", options);
-    console.log("dialogue", dialogue);
-
     this.setState({ thread, box, dialogue }, async () => {
       await this.updateComments();
       await this.updateMembersOnline();
+      await this.addMembers();
 
       thread.onUpdate(() => this.updateComments());
       thread.onNewCapabilities(() => this.updateMembersOnline());
@@ -240,6 +238,40 @@ class ChatBox extends Component {
       membersOnline: updatedMembersOnline,
       membersOnlineLength: updatedMembersOnline.length,
     });
+  }
+
+  addMembers = async () => {
+    const { thread, currentUserAddr } = this.state;
+    const { persistent, moderator, members, open } = this.props;
+
+    const membersOnline = this.state.membersOnline || [];
+
+    // add members into thread
+    if (persistent && !open && members && members.length > 0 && currentUserAddr && moderator && currentUserAddr.toLowerCase() === moderator.toLowerCase()) {
+      const getEthAddr = async (did) => {
+        if (did.slice(0, 4) === "did:") {
+          const profile = await resolve(did);
+          if (profile) {
+            return profile.publicKey[2].ethereumAddress.toLowerCase();
+          }
+        }
+        return did;
+      };
+      const getAllEthAddr = async () => await Promise.all(membersOnline.map(did => getEthAddr(did)));
+      const currentMembers = await getAllEthAddr();
+      const newMembers = members.filter(m => !currentMembers.includes(m.toLowerCase()));
+      if (newMembers && newMembers.length > 0) {
+        const { hasAuthed } = this.state;
+        try {
+          if (!hasAuthed) await this.openBox();
+          newMembers.forEach(async m => await thread.addMember(m));
+          console.log("add members", newMembers);
+        } catch (error) {
+          console.error('There was an error adding new members', error);
+        }
+      }
+
+    }
   }
 
   handleClick = () => {
