@@ -85,9 +85,18 @@ class ChatBox extends Component {
     if (!spaceName || !threadName) console.error('You must pass both spaceName and threadName props');
     if (!ethereum) console.error('Chatbox component must have ethereum provider to fully operate');
 
+    const options = !!this.props.persistent ? {
+        firstModerator: ethereum.selectedAddress,
+        members: !!this.props.membersOnly
+      } : {
+        ghost: true
+      };
     const box = await Box.create(ethereum);
-    const thread = await box.openThread(spaceName, threadName, { ghost: true });
+    const thread = await box.openThread(spaceName, threadName, options);
     const dialogue = await thread.getPosts();
+
+    console.log("options", options);
+    console.log("dialogue", dialogue);
 
     this.setState({ thread, box, dialogue }, async () => {
       await this.updateComments();
@@ -163,6 +172,8 @@ class ChatBox extends Component {
 
     if (currentUserAddr) profiles[currentUserAddr] = currentUser3BoxProfile;
 
+    console.log("profiles", profiles);
+
     this.setState({
       profiles,
     });
@@ -186,6 +197,8 @@ class ChatBox extends Component {
     const filteredDialogue = updatedUnsortedDialogue.filter(({ message }) => !isLikeEvent(message))
     const newDialogueLength = filteredDialogue.length;
     const updatedDialogue = sortChronologicallyAndGroup(filteredDialogue);
+
+    console.log("updatedDialogue", updatedDialogue)
 
     // if there are new messagers, fetch their profiles
     const updatedUniqueUsers = [...new Set(updatedUnsortedDialogue.map(x => x.author))];
@@ -272,6 +285,8 @@ class ChatBox extends Component {
     const { loginFunction, userProfileURL, } = this.props;
 
     const noWeb3 = !box && !loginFunction && !ethereum;
+
+    console.log("ChatBox render(): profiles", profiles);
 
     if (popupChat) {
       return (

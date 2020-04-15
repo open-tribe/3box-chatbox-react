@@ -35,6 +35,8 @@ class Message extends Component {
       (isMyComment ? 'sent' : 'received')
     ];
 
+    console.log("Message render(): profile", profile);
+
     const profilePicture = (profile && profile.ethAddr) &&
       (profile.image ? `https://ipfs.infura.io/ipfs/${profile.image[0].contentUrl['/']}`
         : makeBlockie(profile.ethAddr));
