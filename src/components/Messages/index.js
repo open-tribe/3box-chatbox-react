@@ -36,7 +36,8 @@ class Message extends Component {
     ];
 
     const profilePicture = (profile && profile.ethAddr) &&
-      (profile.image ? `https://ipfs.infura.io/ipfs/${profile.image[0].contentUrl['/']}`
+      ((profile.image && profile.image[0] && profile.image[0].contentUrl && profile.image[0].contentUrl['/'])
+        ? `https://ipfs.infura.io/ipfs/${profile.image[0].contentUrl['/']}`
         : makeBlockie(profile.ethAddr));
 
     return (
@@ -99,7 +100,7 @@ Message.propTypes = {
   profile: PropTypes.object,
   likers: PropTypes.oneOfType([PropTypes.bool, PropTypes.array]),
   isFirstMessage: PropTypes.bool,
-  colorTheme: PropTypes.string,
+  colorTheme: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
   membersOnline: PropTypes.array,
   currentUserAddr: PropTypes.string,
   userProfileURL: PropTypes.func,
