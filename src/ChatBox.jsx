@@ -361,13 +361,13 @@ class ChatBox extends Component {
       isOpen,
       threadExists
     } = this.state;
-    const { loginFunction, userProfileURL, } = this.props;
+    const { loginFunction, userProfileURL, firstModerator, persistent, open } = this.props;
 
     const noWeb3 = !box && !loginFunction && !ethereum;
 
     console.log("ChatBox render(): profiles", box, profiles);
 
-    if (!threadExists) {
+    if (persistent && !open && !threadExists && firstModerator && currentUserAddr && currentUserAddr !== firstModerator) {
       return <div></div>
     }
 
