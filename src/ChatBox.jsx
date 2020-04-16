@@ -75,10 +75,16 @@ class ChatBox extends Component {
   }
 
   fetchThread = async () => {
-    const { ethereum } = this.state;
+    const {
+      ethereum,
+      currentUserAddr
+    } = this.state;
     const {
       spaceName,
       threadName,
+      persistent,
+      open,
+      firstModerator
     } = this.props;
 
     setTimeout(() => this.setState({ isJoiningThread: false }), 5000);
@@ -114,7 +120,12 @@ class ChatBox extends Component {
         await this.addModerators();
       });
     } catch(error) {
-      console.log("failed when fetch thread", error);
+      console.error("failed when fetch thread", error);
+      let threadExists = true;
+      if (persistent && firstModerator && currentUserAddr && currentUserAddr !== firstModerator) {
+        threadExists = false;
+      }
+      this.setState({ threadExists });
     }
   }
 
@@ -367,7 +378,7 @@ class ChatBox extends Component {
 
     console.log("ChatBox render(): profiles", box, profiles);
 
-    if (persistent && !open && !threadExists && firstModerator && currentUserAddr && currentUserAddr !== firstModerator) {
+    if (!threadExists) {
       return <div></div>
     }
 
