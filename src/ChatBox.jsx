@@ -56,6 +56,7 @@ class ChatBox extends Component {
       box,
       currentUserAddr,
       ethereum: ethereum || window.ethereum,
+      threadExists: false
     }
   }
 
@@ -82,6 +83,8 @@ class ChatBox extends Component {
 
     setTimeout(() => this.setState({ isJoiningThread: false }), 5000);
 
+    console.log("fetchThread: prepare", spaceName, threadName, ethereum);
+
     if (!spaceName || !threadName) console.error('You must pass both spaceName and threadName props');
     if (!ethereum) console.error('Chatbox component must have ethereum provider to fully operate');
 
@@ -91,19 +94,28 @@ class ChatBox extends Component {
       } : {
         ghost: true
       };
-    const box = await Box.create(ethereum);
-    const thread = await box.openThread(spaceName, threadName, options);
-    const dialogue = await thread.getPosts();
 
-    this.setState({ thread, box, dialogue }, async () => {
-      await this.updateComments();
-      await this.updateMembersOnline();
-      thread.onUpdate(() => this.updateComments());
-      thread.onNewCapabilities(() => this.updateMembersOnline());
+    console.log("fetchThread: start", options);
 
-      await this.addMembers();
-      await this.addModerators();
-    });
+    try{
+      const box = await Box.create(ethereum);
+      const thread = await box.openThread(spaceName, threadName, options);
+      const dialogue = await thread.getPosts();
+      const threadExists = true;
+      console.log("fetchThread: fetched", box, thread);
+
+      this.setState({ thread, box, dialogue, threadExists }, async () => {
+        await this.updateComments();
+        await this.updateMembersOnline();
+        thread.onUpdate(() => this.updateComments());
+        thread.onNewCapabilities(() => this.updateMembersOnline());
+
+        await this.addMembers();
+        await this.addModerators();
+      });
+    } catch(error) {
+      console.log("failed when fetch thread", error);
+    }
   }
 
   openBox = async () => {
@@ -347,12 +359,17 @@ class ChatBox extends Component {
       likes,
       isJoiningThread,
       isOpen,
+      threadExists
     } = this.state;
     const { loginFunction, userProfileURL, } = this.props;
 
     const noWeb3 = !box && !loginFunction && !ethereum;
 
-    console.log("ChatBox render(): profiles", profiles);
+    console.log("ChatBox render(): profiles", box, profiles);
+
+    if (!threadExists) {
+      return <div></div>
+    }
 
     if (popupChat) {
       return (
