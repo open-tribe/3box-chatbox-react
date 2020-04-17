@@ -50,6 +50,7 @@ class Launcher extends Component {
       box,
       popupChat,
       isJoiningThread,
+      inputWarning,
     } = this.props;
 
     const classList = [
@@ -90,6 +91,7 @@ class Launcher extends Component {
           isJoiningThread={isJoiningThread}
           box={box}
           popupChat={popupChat}
+          inputWarning={inputWarning}
         />
       </div>
     );
@@ -120,6 +122,7 @@ Launcher.propTypes = {
   ethereum: PropTypes.object,
   box: PropTypes.object,
   membersOnlineLength: PropTypes.number,
+  inputWarning: PropTypes.string,
 };
 
 Launcher.defaultProps = {

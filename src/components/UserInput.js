@@ -109,7 +109,7 @@ class UserInput extends Component {
 
   render() {
     const { emojiPickerIsOpen, inputActive, inputHasText, showWe3Warning } = this.state;
-    const { currentUser3BoxProfile, currentUserAddr, userProfileURL } = this.props;
+    const { currentUser3BoxProfile, currentUserAddr, userProfileURL, warningMessage } = this.props;
 
     const updatedProfilePicture = currentUser3BoxProfile.image ? `https://ipfs.infura.io/ipfs/${currentUser3BoxProfile.image[0].contentUrl['/']}`
       : currentUserAddr && makeBlockie(currentUserAddr);
@@ -117,6 +117,7 @@ class UserInput extends Component {
     return (
       <form className={`sc-user-input ${(inputActive ? 'active' : '')}`}>
         {showWe3Warning && <p className="sc-user-input-warning">You cannot post without a web3 provider</p>}
+        {warningMessage && <p className="sc-user-input-warning">{warningMessage}</p>}
 
         {updatedProfilePicture ? (
           <a
@@ -183,6 +184,7 @@ UserInput.propTypes = {
   currentUserAddr: PropTypes.string,
   currentUser3BoxProfile: PropTypes.object,
   ethereum: PropTypes.object,
+  warningMessage: PropTypes.string,
 };
 
 export default UserInput;

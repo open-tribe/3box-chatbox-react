@@ -56,7 +56,8 @@ class ChatBox extends Component {
       box,
       currentUserAddr,
       ethereum: ethereum || window.ethereum,
-      threadExists: false
+      threadExists: false,
+      inputWarning: null
     }
   }
 
@@ -269,7 +270,7 @@ class ChatBox extends Component {
     const updatedMembersOnline = await thread.listMembers();
 
     await this.fetchProfiles(updatedMembersOnline);
-    if (currentUserAddr) updatedMembersOnline.push(currentUserAddr);
+    // if (currentUserAddr) updatedMembersOnline.push(currentUserAddr);
 
     this.setState({
       membersOnline: updatedMembersOnline,
@@ -355,17 +356,51 @@ class ChatBox extends Component {
     });
   }
 
+  canPost = async () => {
+    const { persistent, open, firstModerator } = this.props;
+    let { currentUserAddr } = this.state;
+
+    if (!persistent || open) {
+      // Ghost Thread, or Open Thread
+      return true;
+    } else if (firstModerator && currentUserAddr && firstModerator.toLowerCase() === currentUserAddr.toLowerCase()) {
+      // the first moderator of the thread
+      return true;
+    } else {
+      const membersOnline = this.state.membersOnline || [];
+      const currentMembers = await this.getEthAddresses(membersOnline);
+      if (currentUserAddr && currentMembers.includes(currentUserAddr.toLowerCase())) {
+        // a member of the thread
+        return true;
+      } else {
+        const moderator = firstModerator || '';
+        this.setWarning(`You're not a member of the thread. Please contact the moderator ${moderator}`);
+      }
+    }
+    return false;
+  }
+
   postMessage = async (message) => {
     const { hasAuthed, ethereum } = this.state;
 
     if (!ethereum) return;
+    const allowed = await this.canPost();
+    if (!allowed) return ;
     try {
       if (!hasAuthed) await this.openBox();
       await this.state.thread.post(message.data.text || message.data.emoji);
       await this.updateComments();
     } catch (error) {
       console.error('There was an error saving your message', error);
+      this.setWarning(error.message);
     }
+  }
+
+  setWarning = (inputWarning ) => {
+    this.setState({ inputWarning });
+    setTimeout(() => {
+      this.setState({ inputWarning : null });
+    }, 10000);
   }
 
   render() {
@@ -387,7 +422,8 @@ class ChatBox extends Component {
       likes,
       isJoiningThread,
       isOpen,
-      threadExists
+      threadExists,
+      inputWarning
     } = this.state;
     const { loginFunction, userProfileURL } = this.props;
 
@@ -423,6 +459,7 @@ class ChatBox extends Component {
           box={box}
           userProfileURL={userProfileURL}
           isJoiningThread={isJoiningThread}
+          inputWarning={inputWarning}
         />
       );
     }
@@ -450,6 +487,7 @@ class ChatBox extends Component {
         box={box}
         popupChat={false}
         notPopup
+        inputWarning={inputWarning}
       />
     )
   }

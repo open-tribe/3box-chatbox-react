@@ -58,6 +58,7 @@ class ChatWindow extends Component {
       postMessage,
       popupChat,
       isJoiningThread,
+      inputWarning,
     } = this.props;
 
     const { isShowOnlineList } = this.state;
@@ -108,6 +109,7 @@ class ChatWindow extends Component {
             showEmoji={showEmoji}
             userProfileURL={userProfileURL}
             ethereum={ethereum}
+            warningMessage={inputWarning}
           />
         </div>
       </div >
@@ -137,6 +139,7 @@ ChatWindow.propTypes = {
   likes: PropTypes.instanceOf(Map),
   membersOnline: PropTypes.array,
   membersOnlineLength: PropTypes.number,
+  inputWarning: PropTypes.string,
 };
 
 export default ChatWindow;
