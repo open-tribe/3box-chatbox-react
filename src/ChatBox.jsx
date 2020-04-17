@@ -106,9 +106,8 @@ class ChatBox extends Component {
     try{
       const box = await Box.create(ethereum);
       if (persistent) {
-        const modratorAddr = firstModerator || ethereum.selectedAddress;
-        await box.auth([spaceName], { address: modratorAddr });
-        console.log("fetchThread: auth", spaceName, modratorAddr);
+        await box.auth([spaceName], { address: ethereum.selectedAddress });
+        console.log("fetchThread: auth", spaceName, ethereum.selectedAddress);
       }
       const thread = await box.openThread(spaceName, threadName, options);
       const dialogue = await thread.getPosts();
