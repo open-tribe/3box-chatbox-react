@@ -310,7 +310,7 @@ class ChatBox extends Component {
           const { hasAuthed } = this.state;
           try {
             if (!hasAuthed) await this.openBox();
-            newMembers.forEach(async m => await thread.addMember(m));
+            await Promise.all(newMembers.map(m => thread.addMember(m)));
             const updatedMembers = await thread.listMembers();
             const updatedMemberAddrs = await this.getEthAddresses(updatedMembers);
             console.log("current added members", updatedMemberAddrs);
@@ -337,7 +337,7 @@ class ChatBox extends Component {
           const { hasAuthed } = this.state;
           try {
             if (!hasAuthed) await this.openBox();
-            newModerators.forEach(async m => await thread.addModerator(m));
+            await Promise.all(newModerators.map(m => thread.addModerator(m)));
             const updatedModerators = await thread.listModerators();
             const updatedModeratorAddrs = await this.getEthAddresses(updatedModerators);
             console.log("current added moderators", updatedModeratorAddrs);
