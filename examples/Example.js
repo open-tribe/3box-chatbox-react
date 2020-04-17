@@ -73,8 +73,8 @@ class Example extends React.Component {
 
               // persistent threads
               persistent
-              // open
-              // firstModerator={"0xF439..."}
+              open
+              firstModerator={"0x72c419022d04F8975F2d4E2eFB42Fec2fFC5b97E"}
               // moderators={["0xp83F..."]}
               // members={["0xp83F...", "0xu9i7..."]}
 

@@ -104,15 +104,19 @@ class ChatBox extends Component {
     try{
       const box = await Box.create(ethereum);
       if (persistent) {
-        // need to authenticate before openSpace
-        await box.auth([spaceName], { address: myAddr });
-        if (moderatorAddr === myAddr) {
-          // the moderator need to openSpace first, before others can be added
-          await box.openSpace(spaceName);
-        } else {
-          box.openSpace(spaceName)
-            .then(space => console.log(`open space ${spaceName} completed`, space))
-            .catch(err => console.log(`open space ${spaceName} failed`, err));
+        const spaces = await Box.listSpaces(myAddr);
+        if (!spaces || !spaces.includes(spaceName)) {
+          // need to authenticate before openSpace
+          await box.auth([spaceName], { address: myAddr });
+          if (moderatorAddr === myAddr) {
+            // the moderator need to openSpace first, before others can be added
+            await box.openSpace(spaceName);
+          } else {
+            // other accounts still need to openSpace, but can do it asynchronously
+            box.openSpace(spaceName)
+              .then(space => console.log(`open space ${spaceName} completed`, space))
+              .catch(err => console.log(`open space ${spaceName} failed`, err));
+          }
         }
       }
       const thread = await box.openThread(spaceName, threadName, options);
@@ -121,12 +125,16 @@ class ChatBox extends Component {
 
       this.setState({ thread, box, dialogue, threadExists }, async () => {
         await this.updateComments();
-        await this.updateMembersOnline();
         thread.onUpdate(() => this.updateComments());
-        thread.onNewCapabilities(() => this.updateMembersOnline());
 
-        await this.addMembers();
-        await this.addModerators();
+        if (!open) {
+          // update members if it's not an open thread
+          await this.updateMembersOnline();
+          thread.onNewCapabilities(() => this.updateMembersOnline());
+          // add members and moderators if provided
+          await this.addMembers();
+          await this.addModerators();
+        }
       });
     } catch(error) {
       console.error("failed when fetch thread", error);
