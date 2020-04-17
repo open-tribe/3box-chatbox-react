@@ -94,17 +94,22 @@ class ChatBox extends Component {
     if (!spaceName || !threadName) console.error('You must pass both spaceName and threadName props');
     if (!ethereum) console.error('Chatbox component must have ethereum provider to fully operate');
 
-    const options = !!this.props.persistent ? {
-        firstModerator: this.props.firstModerator || ethereum.selectedAddress,
-        members: !this.props.open
-      } : {
-        ghost: true
-      };
+    const options = persistent ? {
+      firstModerator: firstModerator || ethereum.selectedAddress,
+      members: !open
+    } : {
+      ghost: true
+    };
 
     console.log("fetchThread: start", options);
 
     try{
       const box = await Box.create(ethereum);
+      if (persistent) {
+        const modratorAddr = firstModerator || ethereum.selectedAddress;
+        await box.auth([spaceName], { address: modratorAddr });
+        console.log("fetchThread: auth", spaceName, modratorAddr);
+      }
       const thread = await box.openThread(spaceName, threadName, options);
       const dialogue = await thread.getPosts();
       const threadExists = true;
