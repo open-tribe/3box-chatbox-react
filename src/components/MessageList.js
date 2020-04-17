@@ -96,6 +96,9 @@ class MessageList extends Component {
           )}
 
           {messages.map((userGrouping, i) => {
+            if (!(userGrouping instanceof Array)) {
+              userGrouping = [userGrouping];
+            }
             const profile = profiles[userGrouping[0].author];
             const currentUserAddrNormalized = currentUserAddr && currentUserAddr.toLowerCase();
             const commentAddr = profile && profile.ethAddr.toLowerCase();

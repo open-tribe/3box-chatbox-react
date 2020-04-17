@@ -35,6 +35,10 @@ class Message extends Component {
       (isMyComment ? 'sent' : 'received')
     ];
 
+    if (!profile) {
+      return <div></div>
+    }
+
     const profilePicture = (profile && profile.ethAddr) &&
       ((profile.image && profile.image[0] && profile.image[0].contentUrl && profile.image[0].contentUrl['/'])
         ? `https://ipfs.infura.io/ipfs/${profile.image[0].contentUrl['/']}`

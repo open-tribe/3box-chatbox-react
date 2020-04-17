@@ -56,6 +56,7 @@ class ChatBox extends Component {
       box,
       currentUserAddr,
       ethereum: ethereum || window.ethereum,
+      threadExists: false
     }
   }
 
@@ -74,10 +75,16 @@ class ChatBox extends Component {
   }
 
   fetchThread = async () => {
-    const { ethereum } = this.state;
+    const {
+      ethereum,
+      currentUserAddr
+    } = this.state;
     const {
       spaceName,
       threadName,
+      persistent,
+      open,
+      firstModerator
     } = this.props;
 
     setTimeout(() => this.setState({ isJoiningThread: false }), 5000);
@@ -85,17 +92,58 @@ class ChatBox extends Component {
     if (!spaceName || !threadName) console.error('You must pass both spaceName and threadName props');
     if (!ethereum) console.error('Chatbox component must have ethereum provider to fully operate');
 
-    const box = await Box.create(ethereum);
-    const thread = await box.openThread(spaceName, threadName, { ghost: true });
-    const dialogue = await thread.getPosts();
+    const myAddr = currentUserAddr || ethereum.selectedAddress;
+    const moderatorAddr = firstModerator || myAddr;
+    const options = persistent ? {
+      firstModerator: moderatorAddr,
+      members: !open
+    } : {
+      ghost: true
+    };
 
-    this.setState({ thread, box, dialogue }, async () => {
-      await this.updateComments();
-      await this.updateMembersOnline();
+    try{
+      const box = await Box.create(ethereum);
+      if (persistent) {
+        const spaces = await Box.listSpaces(myAddr);
+        if (!spaces || !spaces.includes(spaceName)) {
+          // need to authenticate before openSpace
+          await box.auth([spaceName], { address: myAddr });
+          if (moderatorAddr === myAddr) {
+            // the moderator need to openSpace first, before others can be added
+            await box.openSpace(spaceName);
+          } else {
+            // other accounts still need to openSpace, but can do it asynchronously
+            box.openSpace(spaceName)
+              .then(space => console.log(`open space ${spaceName} completed`, space))
+              .catch(err => console.log(`open space ${spaceName} failed`, err));
+          }
+        }
+      }
+      const thread = await box.openThread(spaceName, threadName, options);
+      const dialogue = await thread.getPosts();
+      const threadExists = true;
 
-      thread.onUpdate(() => this.updateComments());
-      thread.onNewCapabilities(() => this.updateMembersOnline());
-    });
+      this.setState({ thread, box, dialogue, threadExists }, async () => {
+        await this.updateComments();
+        thread.onUpdate(() => this.updateComments());
+
+        if (!open) {
+          // update members if it's not an open thread
+          await this.updateMembersOnline();
+          thread.onNewCapabilities(() => this.updateMembersOnline());
+          // add members and moderators if provided
+          await this.addMembers();
+          await this.addModerators();
+        }
+      });
+    } catch(error) {
+      console.error("failed when fetch thread", error);
+      let threadExists = true;
+      if (persistent && firstModerator && currentUserAddr && currentUserAddr !== firstModerator) {
+        threadExists = false;
+      }
+      this.setState({ threadExists });
+    }
   }
 
   openBox = async () => {
@@ -229,6 +277,77 @@ class ChatBox extends Component {
     });
   }
 
+  getEthAddresses = async (users) => {
+    const getEthAddr = async (did) => {
+      if (did.slice(0, 4) === "did:") {
+        const profile = await resolve(did);
+        if (profile) {
+          return profile.publicKey[2].ethereumAddress.toLowerCase();
+        }
+      }
+      return did;
+    };
+    const getAllEthAddr = async () => await Promise.all(users.map(did => getEthAddr(did)));
+    const addresses = await getAllEthAddr();
+    return addresses;
+  }
+
+  addMembers = async (members) => {
+    const { thread, currentUserAddr } = this.state;
+    const { persistent, open } = this.props;
+    members = members || this.props.members;
+
+    // add members into thread
+    if (persistent && !open && members && members.length > 0 && currentUserAddr) {
+      const currentModerators = await thread.listModerators();
+      const currentModeratorsAddresses = await this.getEthAddresses(currentModerators);
+      if (currentModeratorsAddresses.includes(currentUserAddr.toLowerCase())) {
+        const membersOnline = this.state.membersOnline || [];
+        const currentMembers = await this.getEthAddresses(membersOnline);
+        const newMembers = members.filter(m => !currentMembers.includes(m.toLowerCase()));
+        if (newMembers && newMembers.length > 0) {
+          const { hasAuthed } = this.state;
+          try {
+            if (!hasAuthed) await this.openBox();
+            newMembers.forEach(async m => await thread.addMember(m));
+            const updatedMembers = await thread.listMembers();
+            const updatedMemberAddrs = await this.getEthAddresses(updatedMembers);
+            console.log("current added members", updatedMemberAddrs);
+          } catch (error) {
+            console.error('There was an error adding new members', error);
+          }
+        }
+      }
+    }
+  }
+
+  addModerators = async (moderators) => {
+    const { thread, currentUserAddr } = this.state;
+    const { persistent, open } = this.props;
+    moderators = moderators || this.props.moderators;
+
+    // add moderators into thread
+    if (persistent && !open && moderators && moderators.length > 0 && currentUserAddr) {
+      const currentModerators = await thread.listModerators();
+      const currentModeratorsAddresses = await this.getEthAddresses(currentModerators);
+      if (currentModeratorsAddresses.includes(currentUserAddr.toLowerCase())) {
+        const newModerators = moderators.filter(m => !currentModeratorsAddresses.includes(m.toLowerCase()));
+        if (newModerators && newModerators.length > 0) {
+          const { hasAuthed } = this.state;
+          try {
+            if (!hasAuthed) await this.openBox();
+            newModerators.forEach(async m => await thread.addModerator(m));
+            const updatedModerators = await thread.listModerators();
+            const updatedModeratorAddrs = await this.getEthAddresses(updatedModerators);
+            console.log("current added moderators", updatedModeratorAddrs);
+          } catch (error) {
+            console.error('There was an error adding new moderators', error);
+          }
+        }
+      }
+    }
+  }
+
   handleClick = () => {
     this.setState({
       isOpen: !this.state.isOpen,
@@ -268,10 +387,15 @@ class ChatBox extends Component {
       likes,
       isJoiningThread,
       isOpen,
+      threadExists
     } = this.state;
-    const { loginFunction, userProfileURL, } = this.props;
+    const { loginFunction, userProfileURL } = this.props;
 
     const noWeb3 = !box && !loginFunction && !ethereum;
+
+    if (!threadExists) {
+      return <div></div>
+    }
 
     if (popupChat) {
       return (

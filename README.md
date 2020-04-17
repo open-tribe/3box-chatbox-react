@@ -12,7 +12,7 @@
 
 ## How it Works
 #### Architecture
-The Chatbox plugin is built using a standard implementation of [Open Threads](https://docs.3box.io/build/web-apps/messaging/choose#open-threads) which are defined in the [3Box Threads API](https://docs.3box.io/api/messaging) and made available via the [`3Box.js SDK`](https://github.com/3box/3box-js). Chatbox messages are ephemeral and are persisted only as long as there is at least one user in the chatbox. The Chatbox plugin includes UI for inputting and displaying both an in-window and pop-up chat and all relevant logic. The component is configurable to various authentication patterns, and can handle both Web3/3Box logged-in & logged-out states. 
+The Chatbox plugin is built using a standard implementation of [Open Threads](https://docs.3box.io/build/web-apps/messaging/choose#open-threads) which are defined in the [3Box Threads API](https://docs.3box.io/api/messaging) and made available via the [`3Box.js SDK`](https://github.com/3box/3box-js). Chatbox messages are ephemeral and are persisted only as long as there is at least one user in the chatbox. The Chatbox plugin includes UI for inputting and displaying both an in-window and pop-up chat and all relevant logic. The component is configurable to various authentication patterns, and can handle both Web3/3Box logged-in & logged-out states.
 
 #### Authentication
 Starting with version 0.0.5, the content of the configured chatbox can be read right on component mount.  Authentication into the space provided is handled automatically when the user decides to post to the chatbox.
@@ -74,7 +74,7 @@ The Chatbox thread needs a name, and we recommend that your application creates 
 import ChatBox from '3box-chatbox-react';
 
 const MyComponent = ({ handleLogin, box, ethereum, myAddress, currentUser3BoxProfile, adminEthAddr }) => (
-    <ChatBox 
+    <ChatBox
         // required
         spaceName="mySpaceName"
         threadName="myThreadName"
@@ -104,6 +104,13 @@ const MyComponent = ({ handleLogin, box, ethereum, myAddress, currentUser3BoxPro
             imageUrl: "https://imgur.com/RXJO8FD"
         }
         openOnMount={false}
+
+        // enable Persistent Thread
+        persistent
+        // open
+        firstModerator={"0xF439..."}
+        // moderators={["0xp83F..."]}
+        // members={["0xp83F...", "0xu9i7..."]}
     />
 );
 ```
@@ -129,6 +136,11 @@ const MyComponent = ({ handleLogin, box, ethereum, myAddress, currentUser3BoxPro
 | `currentUser3BoxProfile`    | Object       |   | Optional    | If the current user has already had their 3Box data fetched at the global dApp state, pass the object returned from `Box.getProfile(profileAddress)` to avoid an extra request.  This data will be rendered in the Chatbox input interface.|
 | `userProfileURL`    | Function       |  Defaults to returning user's 3Box profile URL  | Optional    | A function that returns a correctly formatted URL of a user's profile on the current platform.  The function will be passed an Ethereum address within the component, if needed.  A user will be redirected to the URL returned from this function when clicking on the name or Ethereum address associated with the message in the chatbox. This prop is also used in the "Edit profile" link in the header of the Chatbox component.|
 | `openOnMount`    | Boolean       |  False  | Optional    | Set whether a Popup style Chatbox is open on component mount. This prop only affects desktop browsers. |
+| `persistent`    | Boolean       |  False  | Optional    | Use persistent thread if set to true. |
+| `open`    | Boolean       |  False  | Optional    | Make the persistent thread open and anyone can post. If set to False, only members can post. |
+| `firstModerator`    | Eth Address       |   | Optional    | The first moderator in persistent thread. This field is important to find the exact thread. |
+| `members`    | Array of Eth Address     |   | Optional    | When the thread is private (`open` is false), add the provided members into the thread. Ignored if the thread is public. |
+| `moderators`    | Array of Eth Address      |   | Optional    | When the thread is private (`open` is false), set the provided moderators for this thread. Ignored if the thread is public. |
 
 ## License
 

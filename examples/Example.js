@@ -53,7 +53,7 @@ class Example extends React.Component {
               // required
               // spaceName='3boxtestcomments'
               // threadName='ghostChatTest5'
-              spaceName='MyFollowing'
+              spaceName='Kickback'
               threadName='chatbox'
 
               // case A & B
@@ -70,6 +70,14 @@ class Example extends React.Component {
               // mute
               openOnMount
               popupChat
+
+              // persistent threads
+              persistent
+              open
+              firstModerator={"0x72c419022d04F8975F2d4E2eFB42Fec2fFC5b97E"}
+              // moderators={["0xp83F..."]}
+              // members={["0xp83F...", "0xu9i7..."]}
+
             // colorTheme="#1168df"
             // threadOpts={{}}
             // spaceOpts={{}}
