@@ -89,30 +89,35 @@ class ChatBox extends Component {
 
     setTimeout(() => this.setState({ isJoiningThread: false }), 5000);
 
-    console.log("fetchThread: prepare", spaceName, threadName, ethereum);
-
     if (!spaceName || !threadName) console.error('You must pass both spaceName and threadName props');
     if (!ethereum) console.error('Chatbox component must have ethereum provider to fully operate');
 
+    const myAddr = currentUserAddr || ethereum.selectedAddress;
+    const moderatorAddr = firstModerator || myAddr;
     const options = persistent ? {
-      firstModerator: firstModerator || ethereum.selectedAddress,
+      firstModerator: moderatorAddr,
       members: !open
     } : {
       ghost: true
     };
 
-    console.log("fetchThread: start", options);
-
     try{
       const box = await Box.create(ethereum);
       if (persistent) {
-        await box.auth([spaceName], { address: ethereum.selectedAddress });
-        console.log("fetchThread: auth", spaceName, ethereum.selectedAddress);
+        // need to authenticate before openSpace
+        await box.auth([spaceName], { address: myAddr });
+        if (moderatorAddr === myAddr) {
+          // the moderator need to openSpace first, before others can be added
+          await box.openSpace(spaceName);
+        } else {
+          box.openSpace(spaceName)
+            .then(space => console.log(`open space ${spaceName} completed`, space))
+            .catch(err => console.log(`open space ${spaceName} failed`, err));
+        }
       }
       const thread = await box.openThread(spaceName, threadName, options);
       const dialogue = await thread.getPosts();
       const threadExists = true;
-      console.log("fetchThread: fetched", box, thread);
 
       this.setState({ thread, box, dialogue, threadExists }, async () => {
         await this.updateComments();
@@ -198,8 +203,6 @@ class ChatBox extends Component {
 
     if (currentUserAddr) profiles[currentUserAddr] = currentUser3BoxProfile;
 
-    console.log("profiles", profiles);
-
     this.setState({
       profiles,
     });
@@ -223,8 +226,6 @@ class ChatBox extends Component {
     const filteredDialogue = updatedUnsortedDialogue.filter(({ message }) => !isLikeEvent(message))
     const newDialogueLength = filteredDialogue.length;
     const updatedDialogue = sortChronologicallyAndGroup(filteredDialogue);
-
-    console.log("updatedDialogue", updatedDialogue)
 
     // if there are new messagers, fetch their profiles
     const updatedUniqueUsers = [...new Set(updatedUnsortedDialogue.map(x => x.author))];
@@ -301,7 +302,9 @@ class ChatBox extends Component {
           try {
             if (!hasAuthed) await this.openBox();
             newMembers.forEach(async m => await thread.addMember(m));
-            console.log("add members", newMembers);
+            const updatedMembers = await thread.listMembers();
+            const updatedMemberAddrs = await this.getEthAddresses(updatedMembers);
+            console.log("current added members", updatedMemberAddrs);
           } catch (error) {
             console.error('There was an error adding new members', error);
           }
@@ -326,7 +329,9 @@ class ChatBox extends Component {
           try {
             if (!hasAuthed) await this.openBox();
             newModerators.forEach(async m => await thread.addModerator(m));
-            console.log("add moderators", newModerators);
+            const updatedModerators = await thread.listModerators();
+            const updatedModeratorAddrs = await this.getEthAddresses(updatedModerators);
+            console.log("current added moderators", updatedModeratorAddrs);
           } catch (error) {
             console.error('There was an error adding new moderators', error);
           }
@@ -376,11 +381,9 @@ class ChatBox extends Component {
       isOpen,
       threadExists
     } = this.state;
-    const { loginFunction, userProfileURL, firstModerator, persistent, open } = this.props;
+    const { loginFunction, userProfileURL } = this.props;
 
     const noWeb3 = !box && !loginFunction && !ethereum;
-
-    console.log("ChatBox render(): profiles", box, profiles);
 
     if (!threadExists) {
       return <div></div>
