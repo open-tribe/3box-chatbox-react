@@ -267,7 +267,11 @@ class ChatBox extends Component {
   updateMembersOnline = async () => {
     const { thread, currentUserAddr } = this.state;
 
-    const updatedMembersOnline = await thread.listMembers();
+    // merge members and moderators
+    let members = await thread.listMembers();
+    let moderators = await thread.listModerators();
+    let nonModerators = members.filter(m => !moderators.includes(m));
+    const updatedMembersOnline = moderators.concat(nonModerators);
 
     await this.fetchProfiles(updatedMembersOnline);
     // if (currentUserAddr) updatedMembersOnline.push(currentUserAddr);
@@ -300,9 +304,8 @@ class ChatBox extends Component {
 
     // add members into thread
     if (persistent && !open && members && members.length > 0 && currentUserAddr) {
-      const currentModerators = await thread.listModerators();
-      const currentModeratorsAddresses = await this.getEthAddresses(currentModerators);
-      if (currentModeratorsAddresses.includes(currentUserAddr.toLowerCase())) {
+      const isAdmin = await this.canModerate();
+      if (isAdmin) {
         const membersOnline = this.state.membersOnline || [];
         const currentMembers = await this.getEthAddresses(membersOnline);
         const newMembers = members.filter(m => !currentMembers.includes(m.toLowerCase()));
@@ -329,9 +332,8 @@ class ChatBox extends Component {
 
     // add moderators into thread
     if (persistent && !open && moderators && moderators.length > 0 && currentUserAddr) {
-      const currentModerators = await thread.listModerators();
-      const currentModeratorsAddresses = await this.getEthAddresses(currentModerators);
-      if (currentModeratorsAddresses.includes(currentUserAddr.toLowerCase())) {
+      const isAdmin = await this.canModerate();
+      if (isAdmin) {
         const newModerators = moderators.filter(m => !currentModeratorsAddresses.includes(m.toLowerCase()));
         if (newModerators && newModerators.length > 0) {
           const { hasAuthed } = this.state;
@@ -356,6 +358,16 @@ class ChatBox extends Component {
     });
   }
 
+  canModerate = async () => {
+    const { thread, currentUserAddr } = this.state;
+
+    if (!thread || !currentUserAddr) return false;
+
+    const currentModerators = await thread.listModerators();
+    const currentModeratorsAddresses = await this.getEthAddresses(currentModerators);
+    return currentModeratorsAddresses.includes(currentUserAddr.toLowerCase());
+  }
+
   canPost = async () => {
     const { persistent, open, firstModerator } = this.props;
     let { currentUserAddr } = this.state;
@@ -370,7 +382,7 @@ class ChatBox extends Component {
       const membersOnline = this.state.membersOnline || [];
       const currentMembers = await this.getEthAddresses(membersOnline);
       if (currentUserAddr && currentMembers.includes(currentUserAddr.toLowerCase())) {
-        // a member of the thread
+        // a member or a moderator of the thread
         return true;
       } else {
         const moderator = firstModerator || '';
