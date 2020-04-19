@@ -128,11 +128,13 @@ class ChatBox extends Component {
         await this.updateComments();
         thread.onUpdate(() => this.updateComments());
 
-        if (!open) {
-          // update members if it's not an open thread
+        if (!persistent || !open) {
+          // update members if Ghost Thread, or a members-only Persistent Thread
           await this.updateMembersOnline();
           thread.onNewCapabilities(() => this.updateMembersOnline());
-          // add members and moderators if provided
+        }
+        if (persistent && !open) {
+          // add members and moderators if a members-only Persistent Thread
           await this.addMembers();
           await this.addModerators();
         }
