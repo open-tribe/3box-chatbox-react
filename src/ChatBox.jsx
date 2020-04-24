@@ -50,6 +50,7 @@ class ChatBox extends Component {
       likes: new Map(),
       uniqueUsers: [],
       membersOnline: [],
+      currentModerators: null,
       thread: {},
       profiles: {},
       currentUser3BoxProfile: {},
@@ -278,9 +279,13 @@ class ChatBox extends Component {
     await this.fetchProfiles(updatedMembersOnline);
     // if (currentUserAddr) updatedMembersOnline.push(currentUserAddr);
 
+    // update moderator addresses
+    const currentModerators = await this.getEthAddresses(moderators);
+
     this.setState({
       membersOnline: updatedMembersOnline,
       membersOnlineLength: updatedMembersOnline.length,
+      currentModerators
     });
   }
 
@@ -303,6 +308,18 @@ class ChatBox extends Component {
     const { thread, currentUserAddr } = this.state;
     const { persistent, open } = this.props;
     members = members || this.props.members;
+    const registerMember = async (m) => {
+      try {
+        if (m) {
+          const p = await Box.getProfile(m);
+          if (p && Object.keys(p) && Object.keys(p).length > 0) {
+            await thread.addMember(m);
+          }
+        }
+      } catch(e) {
+        // console.log(`Failed when adding member ${m}`, e);
+      }
+    }
 
     // add members into thread
     if (persistent && !open && members && members.length > 0 && currentUserAddr) {
@@ -315,10 +332,10 @@ class ChatBox extends Component {
           const { hasAuthed } = this.state;
           try {
             if (!hasAuthed) await this.openBox();
-            await Promise.all(newMembers.map(m => thread.addMember(m)));
+            await Promise.all(newMembers.map(m => registerMember(m)));
             const updatedMembers = await thread.listMembers();
             const updatedMemberAddrs = await this.getEthAddresses(updatedMembers);
-            console.log("current added members", updatedMemberAddrs);
+            console.log("current members", updatedMemberAddrs);
           } catch (error) {
             console.error('There was an error adding new members', error);
           }
@@ -330,21 +347,34 @@ class ChatBox extends Component {
   addModerators = async (moderators) => {
     const { thread, currentUserAddr } = this.state;
     const { persistent, open } = this.props;
+    const currentModerators = this.state.currentModerators || [];
     moderators = moderators || this.props.moderators;
+    const registerModerator = async (m) => {
+      try {
+        if (m) {
+          const p = await Box.getProfile(m);
+          if (p && Object.keys(p) && Object.keys(p).length > 0) {
+            await thread.addModerator(m);
+          }
+        }
+      } catch (e) {
+        // console.log(`Failed when adding moderator ${m}`);
+      }
+    }
 
     // add moderators into thread
     if (persistent && !open && moderators && moderators.length > 0 && currentUserAddr) {
       const isAdmin = await this.canModerate();
       if (isAdmin) {
-        const newModerators = moderators.filter(m => !currentModeratorsAddresses.includes(m.toLowerCase()));
+        const newModerators = moderators.filter(m => !currentModerators.includes(m.toLowerCase()));
         if (newModerators && newModerators.length > 0) {
           const { hasAuthed } = this.state;
           try {
             if (!hasAuthed) await this.openBox();
-            await Promise.all(newModerators.map(m => thread.addModerator(m)));
+            await Promise.all(newModerators.map(m => registerModerator(m)));
             const updatedModerators = await thread.listModerators();
             const updatedModeratorAddrs = await this.getEthAddresses(updatedModerators);
-            console.log("current added moderators", updatedModeratorAddrs);
+            console.log("current moderators", updatedModeratorAddrs);
           } catch (error) {
             console.error('There was an error adding new moderators', error);
           }
@@ -362,12 +392,18 @@ class ChatBox extends Component {
 
   canModerate = async () => {
     const { thread, currentUserAddr } = this.state;
+    let currentModerators = this.state.currentModerators;
 
     if (!thread || !currentUserAddr) return false;
 
-    const currentModerators = await thread.listModerators();
-    const currentModeratorsAddresses = await this.getEthAddresses(currentModerators);
-    return currentModeratorsAddresses.includes(currentUserAddr.toLowerCase());
+    if (!currentModerators) {
+      const moderators = await thread.listModerators();
+      currentModerators = await this.getEthAddresses(moderators);
+      currentModerators = currentModerators || [];
+      this.setState({ currentModerators })
+    }
+
+    return currentModerators.includes(currentUserAddr.toLowerCase());
   }
 
   canPost = async () => {
