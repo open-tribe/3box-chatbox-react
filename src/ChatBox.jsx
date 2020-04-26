@@ -86,7 +86,8 @@ class ChatBox extends Component {
       threadName,
       persistent,
       open,
-      firstModerator
+      firstModerator,
+      onUpdate
     } = this.props;
 
     setTimeout(() => this.setState({ isJoiningThread: false }), 5000);
@@ -127,7 +128,12 @@ class ChatBox extends Component {
 
       this.setState({ thread, box, dialogue, threadExists }, async () => {
         await this.updateComments();
-        thread.onUpdate(() => this.updateComments());
+        thread.onUpdate((update) => {
+          this.updateComments();
+          if (onUpdate && typeof(onUpdate) === 'function') {
+            onUpdate(update);
+          }
+        });
 
         if (!persistent || !open) {
           // update members if Ghost Thread, or a members-only Persistent Thread
@@ -552,6 +558,7 @@ ChatBox.propTypes = {
   currentUserAddr: PropTypes.string,
   userProfileURL: PropTypes.func,
   loginFunction: PropTypes.func,
+  onUpdate: PropTypes.func,
   box: PropTypes.object,
   spaceOpts: PropTypes.object,
   agentProfile: PropTypes.object,
@@ -574,6 +581,7 @@ ChatBox.defaultProps = {
   threadOpts: null,
   spaceOpts: null,
   loginFunction: null,
+  onUpdate: null,
   showEmoji: true,
   openOnMount: false,
 };

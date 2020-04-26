@@ -141,6 +141,7 @@ const MyComponent = ({ handleLogin, box, ethereum, myAddress, currentUser3BoxPro
 | `firstModerator`    | Eth Address       |   | Optional    | The first moderator in persistent thread. This field is important to find the exact thread. |
 | `members`    | Array of Eth Address     |   | Optional    | When the thread is private (`open` is false), add the provided members into the thread. Ignored if the thread is public. |
 | `moderators`    | Array of Eth Address      |   | Optional    | When the thread is private (`open` is false), set the provided moderators for this thread. Ignored if the thread is public. |
+| `onUpdate`    | Function       |    | Optional    | The callback function which is called when messages arrive |
 
 ## License
 
