@@ -13,7 +13,7 @@ class Example extends React.Component {
     this.state = {
       // box: {},
       myProfile: {},
-      myAddress: '',
+      myAddress: window.ethereum.selectedAddress,
       isReady: false,
     }
   }
@@ -31,6 +31,27 @@ class Example extends React.Component {
 
     box.onSyncDone(() => this.setState({ box }));
     this.setState({ box, myProfile, myAddress, isReady: true });
+  }
+
+  // disable the `open` option in <ChatRoom> to test this onError callback,
+  // and set `members` to members={[myAddress]}
+  onError = (error, {
+      currentUserAddr,
+      addedMembers,
+      members,
+      addedModerators,
+      moderators,
+      firstModerator
+    }, showError) => {
+    if (error && error.message && error.message.includes('not a member of the thread')) {
+      if (members && !members.includes(currentUserAddr)) {
+        // user is not in the list of members
+        return "You need to RSVP to get access";
+      } else if (addedMembers && !addedMembers.includes(currentUserAddr)) {
+        // moderators haven't added user to the chat
+        return "Request pending to add you to the chat";
+      }
+    }
   }
 
   render() {
@@ -77,6 +98,7 @@ class Example extends React.Component {
               firstModerator={"0x72c419022d04F8975F2d4E2eFB42Fec2fFC5b97E"}
               // moderators={["0xp83F..."]}
               // members={["0xp83F...", "0xu9i7..."]}
+              // members={[myAddress]}
 
             // colorTheme="#1168df"
             // threadOpts={{}}
@@ -84,6 +106,8 @@ class Example extends React.Component {
             // useHovers={true}
             // currentUser3BoxProfile={myProfile}
             // userProfileURL={(address) => `https://userprofiles.co/user/${address}`}
+
+              onError={this.onError}
             />
           </div>
         </div>

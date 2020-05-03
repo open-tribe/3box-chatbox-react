@@ -50,7 +50,8 @@ class ChatBox extends Component {
       likes: new Map(),
       uniqueUsers: [],
       membersOnline: [],
-      currentModerators: null,
+      addedMembers: [],
+      addedModerators: null,
       thread: {},
       profiles: {},
       currentUser3BoxProfile: {},
@@ -285,13 +286,15 @@ class ChatBox extends Component {
     await this.fetchProfiles(updatedMembersOnline);
     // if (currentUserAddr) updatedMembersOnline.push(currentUserAddr);
 
-    // update moderator addresses
-    const currentModerators = await this.getEthAddresses(moderators);
+    // update members and moderator addresses
+    const addedMembers = await this.getEthAddresses(updatedMembersOnline);
+    const addedModerators = await this.getEthAddresses(moderators);
 
     this.setState({
       membersOnline: updatedMembersOnline,
       membersOnlineLength: updatedMembersOnline.length,
-      currentModerators
+      addedMembers,
+      addedModerators
     });
   }
 
@@ -331,9 +334,8 @@ class ChatBox extends Component {
     if (persistent && !open && members && members.length > 0 && currentUserAddr) {
       const isAdmin = await this.canModerate();
       if (isAdmin) {
-        const membersOnline = this.state.membersOnline || [];
-        const currentMembers = await this.getEthAddresses(membersOnline);
-        const newMembers = members.filter(m => !currentMembers.includes(m.toLowerCase()));
+        const addedMembers = this.state.addedMembers || [];
+        const newMembers = members.filter(m => !addedMembers.includes(m.toLowerCase()));
         if (newMembers && newMembers.length > 0) {
           const { hasAuthed } = this.state;
           try {
@@ -353,7 +355,7 @@ class ChatBox extends Component {
   addModerators = async (moderators) => {
     const { thread, currentUserAddr } = this.state;
     const { persistent, open } = this.props;
-    const currentModerators = this.state.currentModerators || [];
+    const addedModerators = this.state.addedModerators || [];
     moderators = moderators || this.props.moderators;
     const registerModerator = async (m) => {
       try {
@@ -372,7 +374,7 @@ class ChatBox extends Component {
     if (persistent && !open && moderators && moderators.length > 0 && currentUserAddr) {
       const isAdmin = await this.canModerate();
       if (isAdmin) {
-        const newModerators = moderators.filter(m => !currentModerators.includes(m.toLowerCase()));
+        const newModerators = moderators.filter(m => !addedModerators.includes(m.toLowerCase()));
         if (newModerators && newModerators.length > 0) {
           const { hasAuthed } = this.state;
           try {
@@ -398,23 +400,23 @@ class ChatBox extends Component {
 
   canModerate = async () => {
     const { thread, currentUserAddr } = this.state;
-    let currentModerators = this.state.currentModerators;
+    let addedModerators = this.state.addedModerators;
 
     if (!thread || !currentUserAddr) return false;
 
-    if (!currentModerators) {
+    if (!addedModerators) {
       const moderators = await thread.listModerators();
-      currentModerators = await this.getEthAddresses(moderators);
-      currentModerators = currentModerators || [];
-      this.setState({ currentModerators })
+      addedModerators = await this.getEthAddresses(moderators);
+      addedModerators = addedModerators || [];
+      this.setState({ addedModerators })
     }
 
-    return currentModerators.includes(currentUserAddr.toLowerCase());
+    return addedModerators.includes(currentUserAddr.toLowerCase());
   }
 
   canPost = async () => {
-    const { persistent, open, firstModerator } = this.props;
-    let { currentUserAddr } = this.state;
+    const { persistent, open, firstModerator, members, moderators, onError } = this.props;
+    let { currentUserAddr, addedModerators } = this.state;
 
     if (!persistent || open) {
       // Ghost Thread, or Open Thread
@@ -423,21 +425,36 @@ class ChatBox extends Component {
       // the first moderator of the thread
       return true;
     } else {
-      const membersOnline = this.state.membersOnline || [];
-      const currentMembers = await this.getEthAddresses(membersOnline);
-      if (currentUserAddr && currentMembers.includes(currentUserAddr.toLowerCase())) {
+      const addedMembers = this.state.addedMembers || [];
+      if (currentUserAddr && addedMembers.includes(currentUserAddr.toLowerCase())) {
         // a member or a moderator of the thread
         return true;
       } else {
         const moderator = firstModerator || '';
-        this.setWarning(`You're not a member of the thread. Please contact the moderator ${moderator}`);
+        const showError = (msg) => this.setWarning(msg);
+        let message = `You're not a member of the thread. Please contact the moderator ${moderator}`;
+        if (onError) {
+          message = onError(new Error(message), {
+            currentUserAddr,
+            addedMembers,
+            addedModerators,
+            members,
+            moderators,
+            firstModerator
+          }, showError);
+        }
+        if (message) {
+          showError(message);
+        }
       }
     }
     return false;
   }
 
   postMessage = async (message) => {
-    const { hasAuthed, ethereum } = this.state;
+    const { hasAuthed, ethereum, currentUserAddr,
+      addedMembers, addedModerators } = this.state;
+    const { firstModerator, members, moderators, onError } = this.props;
 
     if (!ethereum) return;
     const allowed = await this.canPost();
@@ -448,7 +465,21 @@ class ChatBox extends Component {
       await this.updateComments();
     } catch (error) {
       console.error('There was an error saving your message', error);
-      this.setWarning(error.message);
+      const showError = (msg) => this.setWarning(msg);
+      let message = error.message;
+      if (onError) {
+        message = onError(error, {
+          currentUserAddr,
+          addedMembers,
+          addedModerators,
+          members,
+          moderators,
+          firstModerator
+        }, showError);
+      }
+      if (message) {
+        showError(message);
+      }
     }
   }
 

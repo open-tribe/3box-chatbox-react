@@ -142,6 +142,7 @@ const MyComponent = ({ handleLogin, box, ethereum, myAddress, currentUser3BoxPro
 | `members`    | Array of Eth Address     |   | Optional    | When the thread is private (`open` is false), add the provided members into the thread. Ignored if the thread is public. |
 | `moderators`    | Array of Eth Address      |   | Optional    | When the thread is private (`open` is false), set the provided moderators for this thread. Ignored if the thread is public. |
 | `onUpdate`    | Function       |    | Optional    | The callback function which is called when messages arrive |
+| `onError`    | Function     |    | Optional    | The callback function which is called when failed to send message to the chat. Parameters of (error, data, showError) will be sent to `onError`. `error` is the error thrown when failed, `data` contains the info membership data, and `showError` is the function to show error message which accepts `message` as its parameter |
 
 ## License
 
