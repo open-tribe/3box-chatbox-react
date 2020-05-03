@@ -3,7 +3,7 @@ import Linkify from 'react-linkify';
 import PropTypes from 'prop-types';
 import { ReactTinyLink } from 'react-tiny-link'
 
-const urlsRegex = /(https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})/gi;
+const urlsRegex = /(https?:\/\/(?:www\.|(?!www))[^\s.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})/gi;
 
 const TextMessage = ({ isMyComment, colorTheme, messageObj }) => {
   const links = messageObj.message.match(urlsRegex);
