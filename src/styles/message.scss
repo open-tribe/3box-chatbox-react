@@ -242,6 +242,11 @@
   left: auto;
 }
 
+.sc-message-link-preview .react_tinylink_card {
+  flex-direction: column;
+  height: 208px;
+}
+
 @media (max-width: 450px) {
   .sc-message {
     width: 90%;
