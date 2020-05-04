@@ -45,7 +45,7 @@
 }
 
 .sc-message--text {
-  padding: 11px 16px;
+  padding: 0px; // 11px 16px;
   border-radius: 27.5px;
   font-weight: 400;
   font-size: 15px;
@@ -55,9 +55,14 @@
   word-wrap: break-word;
   width: fit-content;
   max-width: 266px;
+  overflow: hidden;
 
   a {
     color: #2690ff;
+  }
+
+  .text-body {
+    padding: 11px 16px;
   }
 }
 
@@ -246,6 +251,10 @@
   flex-direction: column;
   height: 208px;
   color: rgb(24, 25, 25);
+}
+
+.sc-message-link-preview .line-break {
+  margin-bottom: 0.5em;
 }
 
 @media (max-width: 450px) {
