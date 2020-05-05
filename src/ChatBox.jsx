@@ -88,7 +88,7 @@ class ChatBox extends Component {
       persistent,
       open,
       firstModerator,
-      onUpdate
+      onLoad
     } = this.props;
 
     setTimeout(() => this.setState({ isJoiningThread: false }), 5000);
@@ -127,13 +127,20 @@ class ChatBox extends Component {
       const dialogue = await thread.getPosts();
       const threadExists = true;
 
+      if (onLoad && typeof(onLoad) === 'function') {
+        const likes = resolveLikes(dialogue)
+        const messages = dialogue.filter(({ message }) => !isLikeEvent(message))
+        onLoad({
+          messages,
+          likes,
+          thread
+        });
+      }
+
       this.setState({ thread, box, dialogue, threadExists }, async () => {
-        await this.updateComments();
+        await this.updateComments(true);
         thread.onUpdate((update) => {
           this.updateComments();
-          if (onUpdate && typeof(onUpdate) === 'function') {
-            onUpdate(update);
-          }
         });
 
         if (!persistent || !open) {
@@ -227,7 +234,8 @@ class ChatBox extends Component {
     });
   }
 
-  updateComments = async () => {
+  updateComments = async (local) => {
+    const { onUpdate } = this.props;
     const {
       thread,
       uniqueUsers,
@@ -248,6 +256,16 @@ class ChatBox extends Component {
 
     // if there are new messagers, fetch their profiles
     const updatedUniqueUsers = [...new Set(updatedUnsortedDialogue.map(x => x.author))];
+
+    // onUpdate callback
+    // "local" means the update is triggered locally
+    if (onUpdate && typeof (onUpdate) === 'function' && !local) {
+      onUpdate({
+        messages: filteredDialogue,
+        likes,
+        thread
+      });
+    }
 
     // count new messages for when popup closed
     const numNewMessages = newDialogueLength - dialogueLength;
@@ -462,7 +480,7 @@ class ChatBox extends Component {
     try {
       if (!hasAuthed) await this.openBox();
       await this.state.thread.post(message.data.text || message.data.emoji);
-      await this.updateComments();
+      await this.updateComments(true);
     } catch (error) {
       console.error('There was an error saving your message', error);
       const showError = (msg) => this.setWarning(msg);

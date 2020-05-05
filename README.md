@@ -141,7 +141,8 @@ const MyComponent = ({ handleLogin, box, ethereum, myAddress, currentUser3BoxPro
 | `firstModerator`    | Eth Address       |   | Optional    | The first moderator in persistent thread. This field is important to find the exact thread. |
 | `members`    | Array of Eth Address     |   | Optional    | When the thread is private (`open` is false), add the provided members into the thread. Ignored if the thread is public. |
 | `moderators`    | Array of Eth Address      |   | Optional    | When the thread is private (`open` is false), set the provided moderators for this thread. Ignored if the thread is public. |
-| `onUpdate`    | Function       |    | Optional    | The callback function which is called when messages arrive |
+| `onLoad({messages, likes, thread})`    | Function       |    | Optional    | The callback function which is called when the chat messages are loaded for the first time. The chat history of `messages` and `likes`, and the `thread` object will be returned |
+| `onUpdate({messages, likes, thread})`    | Function       |    | Optional    | The callback function which is called when messages arrive. The `messages` and `likes` contains all the messages and likes |
 | `onError`    | Function     |    | Optional    | The callback function which is called when failed to send message to the chat. Parameters of (error, data, showError) will be sent to `onError`. `error` is the error thrown when failed, `data` contains the info membership data, and `showError` is the function to show error message which accepts `message` as its parameter |
 
 ## License

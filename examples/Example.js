@@ -33,6 +33,14 @@ class Example extends React.Component {
     this.setState({ box, myProfile, myAddress, isReady: true });
   }
 
+  onLoad = ({ messages, likes, thread }) => {
+    console.log('loaded chat history', messages, likes );
+  }
+
+  onUpdate = ({ messages, likes, thread }) => {
+    console.log('updated chat history', messages, likes);
+  }
+
   // disable the `open` option in <ChatRoom> to test this onError callback,
   // and set `members` to members={[myAddress]}
   onError = (error, {
@@ -108,6 +116,8 @@ class Example extends React.Component {
             // userProfileURL={(address) => `https://userprofiles.co/user/${address}`}
 
               onError={this.onError}
+              onLoad={this.onLoad}
+              onUpdate={this.onUpdate}
             />
           </div>
         </div>
