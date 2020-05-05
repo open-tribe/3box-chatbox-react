@@ -139,7 +139,7 @@ class ChatBox extends Component {
 
       this.setState({ thread, box, dialogue, threadExists }, async () => {
         await this.updateComments(true);
-        thread.onUpdate((update) => {
+        thread.onUpdate(() => {
           this.updateComments();
         });
 
